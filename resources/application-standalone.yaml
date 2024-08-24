@@ -6,6 +6,15 @@ security:
   jwt:
     secret: my-super-secret
 
+data:
+  datasource:
+    postgres:
+      host: localhost
+      port: 5432
+      user: admin
+      password: password
+      database: users
+
 server:
   port: 8080
   read-timeout: 10

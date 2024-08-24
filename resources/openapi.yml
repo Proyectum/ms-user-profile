@@ -1,0 +1,177 @@
+openapi: 3.0.0
+info:
+  title: User profile Management
+  version: 1.0.0
+  description: User profile Management endpoints
+  license:
+    name: MIT
+  x-go-package: "github.com/oapi-codegen/runtime"
+paths:
+  /api/v1/users/profile:
+    get:
+      summary: User Profile
+      operationId: getProfile
+      tags:
+        - profile
+      responses:
+        200:
+          description: 'Success'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralProfile'
+        401:
+          description: 'Unauthorized'
+    patch:
+      summary: Update User Profile
+      operationId: updateProfile
+      tags:
+        - profile
+      requestBody:
+        description: update fields
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfile'
+      responses:
+        200:
+          description: 'Success'
+        401:
+          description: 'Unauthorized'
+  /api/v1/users/profile/notifications:
+    patch:
+      summary: Update notifications
+      operationId: updateNotification
+      tags:
+        - notification
+      requestBody:
+        description: update settings
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotifications'
+      responses:
+        200:
+          description: 'Success'
+        401:
+          description: 'Unauthorized'
+  /api/v1/users/profile/notifications/types:
+    get:
+      summary: Get notifications types
+      operationId: getTypes
+      tags:
+        - notification
+      responses:
+        200:
+          description: 'Success'
+        401:
+          description: 'Unauthorized'
+components:
+  schemas:
+    NotificationTypeResponse:
+      type: object
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 'b23f7648-e583-441a-be30-8dc6e9536fd5'
+        name:
+          type: string
+          maxLength: 8
+          minLength: 3
+          example: 'WEB'
+        description:
+          type: string
+          maxLength: 10
+          minLength: 3
+          example: 'Web'
+    UpdateNotifications:
+      type: object
+      properties:
+        type_id:
+          type: string
+          format: uuid
+          example: 'b23f7648-e583-441a-be30-8dc6e9536fd5'
+        push:
+          type: boolean
+          example: true
+        web:
+          type: boolean
+          example: false
+        email:
+          type: boolean
+          example: true
+    UpdateProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 15
+          minLength: 5
+          example: 'John'
+        last_name:
+          type: string
+          maxLength: 15
+          minLength: 5
+          example: 'Doe'
+        bio:
+          type: string
+          maxLength: 128
+          minLength: 0
+          example: 'Some short description about me'
+        locale:
+          type: string
+          maxLength: 5
+          minLength: 5
+          example: 'es-ES'
+
+    GeneralProfile:
+      type: object
+      required:
+        - first_name
+        - last_name
+        - email
+        - username
+        - locale
+        - initials
+      properties:
+        first_name:
+          type: string
+          maxLength: 15
+          minLength: 5
+          example: 'John'
+        last_name:
+          type: string
+          maxLength: 15
+          minLength: 5
+          example: 'Doe'
+        username:
+          type: string
+          maxLength: 15
+          minLength: 5
+          example: 'jdoe'
+        email:
+          type: string
+          format: email
+          example: 'jdoe@example.com'
+        bio:
+          type: string
+          maxLength: 128
+          minLength: 0
+          example: 'Some short description about me'
+        locale:
+          type: string
+          maxLength: 5
+          minLength: 5
+          example: 'es-ES'
+        initials:
+          type: string
+          maxLength: 2
+          minLength: 2
+          example: 'JD'

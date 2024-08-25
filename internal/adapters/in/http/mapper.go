@@ -11,9 +11,37 @@ type UserProfileApiMapper interface {
 	ToNotificationSettingDTO(*entities.NotificationSetting) *api.NotificationSetting
 	ToGeneralProfile(*entities.UserProfile) *api.GeneralProfile
 	ToUpdateProfileDomain(*api.UpdateProfile) *entities.UpdateProfile
+	ToNotificationTypeDTOs([]entities.NotificationType) api.NotificationTypes
+	ToNotificationTypeItem(*entities.NotificationType) *api.NotificationTypeItem
 }
 
 type userProfileApiMapperImpl struct {
+}
+
+func (m *userProfileApiMapperImpl) ToNotificationTypeDTOs(src []entities.NotificationType) api.NotificationTypes {
+	if src == nil {
+		return nil
+	}
+
+	results := make(api.NotificationTypes, len(src))
+
+	for i, _ := range src {
+		results[i] = *m.ToNotificationTypeItem(&src[i])
+	}
+
+	return results
+}
+
+func (m *userProfileApiMapperImpl) ToNotificationTypeItem(src *entities.NotificationType) *api.NotificationTypeItem {
+	if src == nil {
+		return nil
+	}
+
+	return &api.NotificationTypeItem{
+		Id:          src.ID,
+		Name:        src.Name,
+		Description: src.Description,
+	}
 }
 
 func (m *userProfileApiMapperImpl) ToUpdateProfileDomain(src *api.UpdateProfile) *entities.UpdateProfile {

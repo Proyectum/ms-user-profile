@@ -12,3 +12,7 @@ type UpdateNotificationUseCase interface {
 type GetNotificationUseCase interface {
 	GetNotificationSettings(username string) ([]entities.NotificationSetting, error)
 }
+
+type GetNotificationTypeUseCase interface {
+	GetNotificationTypes() ([]entities.NotificationType, error)
+}

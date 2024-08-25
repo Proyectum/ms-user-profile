@@ -11,9 +11,24 @@ type UserProfileMapper interface {
 	ToNotificationSettingEntities([]entities.NotificationSetting) []NotificationSettingEntity
 	ToNotificationTypeEntity(*entities.NotificationType) *NotificationTypeEntity
 	ToNotificationType(*NotificationTypeEntity) *entities.NotificationType
+	ToNotificationTypes([]NotificationTypeEntity) []entities.NotificationType
 }
 
 type userProfileMapperImpl struct {
+}
+
+func (u *userProfileMapperImpl) ToNotificationTypes(src []NotificationTypeEntity) []entities.NotificationType {
+	if src == nil {
+		return nil
+	}
+
+	result := make([]entities.NotificationType, len(src))
+
+	for i, _ := range src {
+		result[i] = *u.ToNotificationType(&src[i])
+	}
+
+	return result
 }
 
 func (u *userProfileMapperImpl) ToNotificationSettings(src []NotificationSettingEntity) []entities.NotificationSetting {

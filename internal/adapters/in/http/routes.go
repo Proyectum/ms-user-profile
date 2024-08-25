@@ -3,21 +3,40 @@ package http
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/proyectum/ms-user-profile/internal/adapters/in/http/api"
 	"github.com/proyectum/ms-user-profile/internal/adapters/in/http/security"
 	app "github.com/proyectum/ms-user-profile/internal/app/usecases"
-	"github.com/proyectum/ms-user-profile/internal/domain/entities"
 	"github.com/proyectum/ms-user-profile/internal/domain/usecases"
 	"net/http"
 )
 
 type profileRoutes struct {
-	getUserProfileUseCase    usecases.GetUserProfileUseCase
-	updateUserProfileUseCase usecases.UpdateUserProfileUseCase
+	getUserProfileUseCase     usecases.GetUserProfileUseCase
+	updateUserProfileUseCase  usecases.UpdateUserProfileUseCase
+	updateNotificationUseCase usecases.UpdateNotificationUseCase
+	getNotificationUseCase    usecases.GetNotificationUseCase
+	apiMapper                 UserProfileApiMapper
 }
 
-func (p *profileRoutes) GetProfile(c *gin.Context) {
+func (r *profileRoutes) GetNotifications(c *gin.Context) {
+	username := getStringValue(c, "username")
+	if c.IsAborted() {
+		return
+	}
+
+	notifications, err := r.getNotificationUseCase.GetNotificationSettings(username)
+
+	if err != nil {
+		r.handleError(c, err)
+		return
+	}
+
+	dtos := r.apiMapper.ToNotificationSettingDTOs(notifications)
+
+	c.JSON(http.StatusOK, dtos)
+}
+
+func (r *profileRoutes) GetProfile(c *gin.Context) {
 	username := getStringValue(c, "username")
 	if c.IsAborted() {
 		return
@@ -32,25 +51,19 @@ func (p *profileRoutes) GetProfile(c *gin.Context) {
 	ctx = context.WithValue(ctx, "username", username)
 	ctx = context.WithValue(ctx, "email", email)
 
-	profile, err := p.getUserProfileUseCase.GetUserProfile(ctx)
+	profile, err := r.getUserProfileUseCase.GetUserProfile(ctx)
 
 	if err != nil {
-		p.handleError(c, err)
+		r.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, api.GeneralProfile{
-		Bio:       &profile.Bio,
-		Email:     openapi_types.Email(profile.Email),
-		FirstName: profile.FirstName,
-		Initials:  profile.Initials,
-		LastName:  profile.LastName,
-		Locale:    profile.Locale,
-		Username:  profile.Username,
-	})
+	dto := r.apiMapper.ToGeneralProfile(profile)
+
+	c.JSON(http.StatusOK, dto)
 }
 
-func (p *profileRoutes) UpdateProfile(c *gin.Context) {
+func (r *profileRoutes) UpdateProfile(c *gin.Context) {
 	username := getStringValue(c, "username")
 	if c.IsAborted() {
 		return
@@ -58,33 +71,44 @@ func (p *profileRoutes) UpdateProfile(c *gin.Context) {
 	var update api.UpdateProfile
 
 	if err := c.BindJSON(&update); err != nil {
-		p.handleError(c, err)
+		r.handleError(c, err)
 		return
 	}
 
-	var entity = entities.UpdateProfile{
-		LastName:  update.LastName,
-		FirstName: update.FirstName,
-		Locale:    update.Locale,
-		Bio:       update.Bio,
-	}
-	err := p.updateUserProfileUseCase.Update(username, entity)
+	var entity = r.apiMapper.ToUpdateProfileDomain(&update)
+	err := r.updateUserProfileUseCase.Update(username, *entity)
 
 	if err != nil {
-		p.handleError(c, err)
+		r.handleError(c, err)
 		return
 	}
 
 	c.Status(http.StatusOK)
 }
 
-func (p *profileRoutes) UpdateNotification(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{
-		"message": "not implemented yet",
-	})
+func (r *profileRoutes) UpdateNotification(c *gin.Context) {
+	username := getStringValue(c, "username")
+	if c.IsAborted() {
+		return
+	}
+	var update api.UpdateNotification
+
+	if err := c.BindJSON(&update); err != nil {
+		r.handleError(c, err)
+		return
+	}
+
+	err := r.updateNotificationUseCase.Update(username, update.TypeId, update.Active)
+
+	if err != nil {
+		r.handleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
-func (p *profileRoutes) GetTypes(c *gin.Context) {
+func (r *profileRoutes) GetTypes(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{
 		"message": "not implemented yet",
 	})
@@ -92,8 +116,11 @@ func (p *profileRoutes) GetTypes(c *gin.Context) {
 
 func RegisterRoutes(r *gin.Engine) {
 	routes := profileRoutes{
-		getUserProfileUseCase:    app.NewUserProfileUseCase(),
-		updateUserProfileUseCase: app.NewUpdateUserProfileUseCase(),
+		getUserProfileUseCase:     app.NewUserProfileUseCase(),
+		updateUserProfileUseCase:  app.NewUpdateUserProfileUseCase(),
+		updateNotificationUseCase: app.NewUpdateNotificationUseCase(),
+		getNotificationUseCase:    app.NewGetNotificationUseCase(),
+		apiMapper:                 NewUserProfileApiMapper(),
 	}
 	api.RegisterHandlersWithOptions(
 		r,
@@ -115,7 +142,7 @@ func getStringValue(c *gin.Context, key string) string {
 	return ""
 }
 
-func (p *profileRoutes) handleError(c *gin.Context, err error) {
+func (r *profileRoutes) handleError(c *gin.Context, err error) {
 	handleInternalError(err, c)
 }
 

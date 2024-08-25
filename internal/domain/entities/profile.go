@@ -19,3 +19,10 @@ type UserProfile struct {
 	UpdatedAt            time.Time
 	DeletedAt            *time.Time
 }
+
+type UpdateProfile struct {
+	Bio       *string
+	FirstName *string
+	LastName  *string
+	Locale    *string
+}

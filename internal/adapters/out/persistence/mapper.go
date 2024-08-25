@@ -74,7 +74,7 @@ func (u *userProfileMapperImpl) ToUserProfileEntity(src *entities.UserProfile) *
 		FirstName:            src.FirstName,
 		LastName:             src.LastName,
 		Username:             src.Username,
-		Email:                src.LastName,
+		Email:                src.Email,
 		Bio:                  src.Bio,
 		Locale:               src.Locale,
 		NotificationSettings: u.ToNotificationSettingEntities(src.NotificationSettings),

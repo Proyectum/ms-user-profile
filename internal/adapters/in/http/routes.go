@@ -7,12 +7,14 @@ import (
 	"github.com/proyectum/ms-user-profile/internal/adapters/in/http/api"
 	"github.com/proyectum/ms-user-profile/internal/adapters/in/http/security"
 	app "github.com/proyectum/ms-user-profile/internal/app/usecases"
+	"github.com/proyectum/ms-user-profile/internal/domain/entities"
 	"github.com/proyectum/ms-user-profile/internal/domain/usecases"
 	"net/http"
 )
 
 type profileRoutes struct {
-	getUserProfileUseCase usecases.GetUserProfileUseCase
+	getUserProfileUseCase    usecases.GetUserProfileUseCase
+	updateUserProfileUseCase usecases.UpdateUserProfileUseCase
 }
 
 func (p *profileRoutes) GetProfile(c *gin.Context) {
@@ -49,9 +51,31 @@ func (p *profileRoutes) GetProfile(c *gin.Context) {
 }
 
 func (p *profileRoutes) UpdateProfile(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{
-		"message": "not implemented yet",
-	})
+	username := getStringValue(c, "username")
+	if c.IsAborted() {
+		return
+	}
+	var update api.UpdateProfile
+
+	if err := c.BindJSON(&update); err != nil {
+		p.handleError(c, err)
+		return
+	}
+
+	var entity = entities.UpdateProfile{
+		LastName:  update.LastName,
+		FirstName: update.FirstName,
+		Locale:    update.Locale,
+		Bio:       update.Bio,
+	}
+	err := p.updateUserProfileUseCase.Update(username, entity)
+
+	if err != nil {
+		p.handleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func (p *profileRoutes) UpdateNotification(c *gin.Context) {
@@ -68,7 +92,8 @@ func (p *profileRoutes) GetTypes(c *gin.Context) {
 
 func RegisterRoutes(r *gin.Engine) {
 	routes := profileRoutes{
-		getUserProfileUseCase: app.NewUserProfileUseCase(),
+		getUserProfileUseCase:    app.NewUserProfileUseCase(),
+		updateUserProfileUseCase: app.NewUpdateUserProfileUseCase(),
 	}
 	api.RegisterHandlersWithOptions(
 		r,

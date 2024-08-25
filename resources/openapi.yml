@@ -39,7 +39,21 @@ paths:
           description: 'Success'
         401:
           description: 'Unauthorized'
-  /api/v1/users/profile/notifications:
+  /api/v1/users/profile/notification-settings:
+    get:
+      summary: Get notifications settings
+      operationId: getNotifications
+      tags:
+        - notification
+      responses:
+        200:
+          description: 'Success'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        401:
+          description: 'Unauthorized'
     patch:
       summary: Update notifications
       operationId: updateNotification
@@ -51,7 +65,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateNotifications'
+              $ref: '#/components/schemas/UpdateNotification'
       responses:
         200:
           description: 'Success'
@@ -70,6 +84,24 @@ paths:
           description: 'Unauthorized'
 components:
   schemas:
+    NotificationSettings:
+      type: array
+      maxItems: 100
+      items:
+        $ref: '#/components/schemas/NotificationSetting'
+    NotificationSetting:
+      type: object
+      required:
+        - type_id
+        - active
+      properties:
+        type_id:
+          type: string
+          format: uuid
+          example: 'b23f7648-e583-441a-be30-8dc6e9536fd5'
+        active:
+          type: boolean
+          example: true
     NotificationTypeResponse:
       type: object
       required:
@@ -91,20 +123,17 @@ components:
           maxLength: 10
           minLength: 3
           example: 'Web'
-    UpdateNotifications:
+    UpdateNotification:
       type: object
+      required:
+        - type_id
+        - active
       properties:
         type_id:
           type: string
           format: uuid
           example: 'b23f7648-e583-441a-be30-8dc6e9536fd5'
-        push:
-          type: boolean
-          example: true
-        web:
-          type: boolean
-          example: false
-        email:
+        active:
           type: boolean
           example: true
     UpdateProfile:

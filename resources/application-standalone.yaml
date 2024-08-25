@@ -7,6 +7,10 @@ security:
     secret: my-super-secret
 
 data:
+  jdbc:
+    gorm:
+      logger:
+        level: "INFO"
   datasource:
     postgres:
       host: localhost

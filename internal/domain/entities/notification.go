@@ -13,8 +13,8 @@ type NotificationType struct {
 	CreatedBy   string
 	UpdatedAt   time.Time
 	UpdatedBy   string
-	DeletedAt   time.Time
-	DeletedBy   string
+	DeletedAt   *time.Time
+	DeletedBy   *string
 }
 
 type NotificationSetting struct {
@@ -24,5 +24,5 @@ type NotificationSetting struct {
 	Active             bool
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
-	DeletedAt          time.Time
+	DeletedAt          *time.Time
 }

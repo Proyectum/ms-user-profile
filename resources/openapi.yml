@@ -80,10 +80,19 @@ paths:
       responses:
         200:
           description: 'Success'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationTypes'
         401:
           description: 'Unauthorized'
 components:
   schemas:
+    NotificationTypes:
+      type: array
+      maxItems: 100
+      items:
+        $ref: '#/components/schemas/NotificationTypeItem'
     NotificationSettings:
       type: array
       maxItems: 100
@@ -102,7 +111,7 @@ components:
         active:
           type: boolean
           example: true
-    NotificationTypeResponse:
+    NotificationTypeItem:
       type: object
       required:
         - id

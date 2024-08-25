@@ -11,11 +11,12 @@ import (
 )
 
 type profileRoutes struct {
-	getUserProfileUseCase     usecases.GetUserProfileUseCase
-	updateUserProfileUseCase  usecases.UpdateUserProfileUseCase
-	updateNotificationUseCase usecases.UpdateNotificationUseCase
-	getNotificationUseCase    usecases.GetNotificationUseCase
-	apiMapper                 UserProfileApiMapper
+	getUserProfileUseCase      usecases.GetUserProfileUseCase
+	updateUserProfileUseCase   usecases.UpdateUserProfileUseCase
+	updateNotificationUseCase  usecases.UpdateNotificationUseCase
+	getNotificationUseCase     usecases.GetNotificationUseCase
+	getNotificationTypeUseCase usecases.GetNotificationTypeUseCase
+	apiMapper                  UserProfileApiMapper
 }
 
 func (r *profileRoutes) GetNotifications(c *gin.Context) {
@@ -109,18 +110,26 @@ func (r *profileRoutes) UpdateNotification(c *gin.Context) {
 }
 
 func (r *profileRoutes) GetTypes(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{
-		"message": "not implemented yet",
-	})
+	entities, err := r.getNotificationTypeUseCase.GetNotificationTypes()
+
+	if err != nil {
+		r.handleError(c, err)
+		return
+	}
+
+	dtos := r.apiMapper.ToNotificationTypeDTOs(entities)
+
+	c.JSON(http.StatusOK, dtos)
 }
 
 func RegisterRoutes(r *gin.Engine) {
 	routes := profileRoutes{
-		getUserProfileUseCase:     app.NewUserProfileUseCase(),
-		updateUserProfileUseCase:  app.NewUpdateUserProfileUseCase(),
-		updateNotificationUseCase: app.NewUpdateNotificationUseCase(),
-		getNotificationUseCase:    app.NewGetNotificationUseCase(),
-		apiMapper:                 NewUserProfileApiMapper(),
+		getUserProfileUseCase:      app.NewUserProfileUseCase(),
+		updateUserProfileUseCase:   app.NewUpdateUserProfileUseCase(),
+		updateNotificationUseCase:  app.NewUpdateNotificationUseCase(),
+		getNotificationUseCase:     app.NewGetNotificationUseCase(),
+		getNotificationTypeUseCase: app.NewGetNotificationTypeUseCase(),
+		apiMapper:                  NewUserProfileApiMapper(),
 	}
 	api.RegisterHandlersWithOptions(
 		r,

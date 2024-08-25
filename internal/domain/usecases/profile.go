@@ -8,3 +8,7 @@ import (
 type GetUserProfileUseCase interface {
 	GetUserProfile(ctx context.Context) (*entities.UserProfile, error)
 }
+
+type UpdateUserProfileUseCase interface {
+	Update(username string, update entities.UpdateProfile) error
+}

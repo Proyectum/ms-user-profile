@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ms-user-profile
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: "http://ms-auth.default.svc.cluster.local:8080/api/v1/auth/validation"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-User,X-Auth-Email,X-Auth-Scopes"
+    nginx.ingress.kubernetes.io/auth-snippet: |
+      auth_request_set $auth_user $upstream_http_x_auth_user;
+      auth_request_set $auth_email $upstream_http_x_auth_email;
+      auth_request_set $auth_scopes $upstream_http_x_auth_scopes;
+      proxy_set_header X-Auth-User $auth_user;
+      proxy_set_header X-Auth-Email $auth_email;
+      proxy_set_header X-Auth-Role $auth_scopes;
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api/v1/users
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-user-profile
+                port:
+                  number: 8080

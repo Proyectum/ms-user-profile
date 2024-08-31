@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ms-user-profile
+data:
+  PS_HOST: "postgres"
+  PS_PORT: "5432"

@@ -1,0 +1,21 @@
+app:
+  name: ms-user-profile
+  environment: ${ENV}
+
+data:
+  jdbc:
+    gorm:
+      logger:
+        level: "INFO"
+  datasource:
+    postgres:
+      host: ${POSTGRES_HOST}
+      port: ${POSTGRES_PORT}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+      database: users
+
+server:
+  port: 8080
+  read-timeout: 10
+  write-timeout: 10

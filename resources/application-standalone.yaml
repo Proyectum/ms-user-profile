@@ -1,10 +1,6 @@
 app:
   name: ms-user-profile
-  profiles: standalone
-
-security:
-  jwt:
-    secret: my-super-secret
+  environment: ${ENV:standalone}
 
 data:
   jdbc:
@@ -13,10 +9,10 @@ data:
         level: "INFO"
   datasource:
     postgres:
-      host: localhost
-      port: 5432
-      user: admin
-      password: password
+      host: ${POSTGRES_HOST:localhost}
+      port: ${POSTGRES_PORT:5432}
+      user: ${POSTGRES_USER:admin}
+      password: ${POSTGRES_PASSWORD:password}
       database: users
 
 server:

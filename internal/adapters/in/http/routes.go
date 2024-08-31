@@ -19,8 +19,13 @@ type profileRoutes struct {
 	apiMapper                  UserProfileApiMapper
 }
 
-func (r *profileRoutes) GetNotifications(c *gin.Context) {
-	username := getStringValue(c, "username")
+func (r *profileRoutes) GetNotifications(c *gin.Context, username string) {
+	user := getStringValue(c, security.UsernameKey)
+	if c.IsAborted() {
+		return
+	}
+
+	r.checkPermissions(username, user, c)
 	if c.IsAborted() {
 		return
 	}
@@ -37,12 +42,18 @@ func (r *profileRoutes) GetNotifications(c *gin.Context) {
 	c.JSON(http.StatusOK, dtos)
 }
 
-func (r *profileRoutes) GetProfile(c *gin.Context) {
-	username := getStringValue(c, "username")
+func (r *profileRoutes) GetProfile(c *gin.Context, username string) {
+	user := getStringValue(c, security.UsernameKey)
 	if c.IsAborted() {
 		return
 	}
-	email := getStringValue(c, "email")
+
+	r.checkPermissions(username, user, c)
+	if c.IsAborted() {
+		return
+	}
+
+	email := getStringValue(c, security.EmailKey)
 	if c.IsAborted() {
 		return
 	}
@@ -64,8 +75,13 @@ func (r *profileRoutes) GetProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, dto)
 }
 
-func (r *profileRoutes) UpdateProfile(c *gin.Context) {
-	username := getStringValue(c, "username")
+func (r *profileRoutes) UpdateProfile(c *gin.Context, username string) {
+	user := getStringValue(c, security.UsernameKey)
+	if c.IsAborted() {
+		return
+	}
+
+	r.checkPermissions(username, user, c)
 	if c.IsAborted() {
 		return
 	}
@@ -87,11 +103,17 @@ func (r *profileRoutes) UpdateProfile(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (r *profileRoutes) UpdateNotification(c *gin.Context) {
-	username := getStringValue(c, "username")
+func (r *profileRoutes) UpdateNotification(c *gin.Context, username string) {
+	user := getStringValue(c, security.UsernameKey)
 	if c.IsAborted() {
 		return
 	}
+
+	r.checkPermissions(username, user, c)
+	if c.IsAborted() {
+		return
+	}
+
 	var update api.UpdateNotification
 
 	if err := c.BindJSON(&update); err != nil {
@@ -135,7 +157,10 @@ func RegisterRoutes(r *gin.Engine) {
 		r,
 		&routes,
 		api.GinServerOptions{
-			Middlewares: []api.MiddlewareFunc{security.JwtMiddleware},
+			Middlewares: []api.MiddlewareFunc{
+				security.AuthHeaderMiddleware,
+				security.ScopesMiddleware,
+			},
 		})
 }
 
@@ -153,6 +178,19 @@ func getStringValue(c *gin.Context, key string) string {
 
 func (r *profileRoutes) handleError(c *gin.Context, err error) {
 	handleInternalError(err, c)
+}
+
+func (r *profileRoutes) checkPermissions(username string, user string, c *gin.Context) {
+	if username == user {
+		return
+	}
+
+	if security.IsAdmin(c) {
+		return
+	}
+
+	c.Status(http.StatusForbidden)
+	c.Abort()
 }
 
 func handleInternalError(err error, c *gin.Context) {

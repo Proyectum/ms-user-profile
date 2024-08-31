@@ -1,69 +1,86 @@
 package security
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/spf13/viper"
 	"net/http"
+	"slices"
 	"strings"
-	"time"
 )
 
-const space = " "
-const bearer = "Bearer"
+const (
+	headerAuthUser   = "X-Auth-User"
+	headerAuthEmail  = "X-Auth-Email"
+	headerAuthScopes = "X-Auth-Scopes"
+	UsernameKey      = "username"
+	EmailKey         = "email"
+	ScopesKey        = "scopes"
+	readScope        = "read"
+	writeScope       = "write"
+	adminScope       = "admin"
+)
 
-func JwtMiddleware(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	if len(authHeader) == 0 {
+var readMethods = []string{http.MethodGet}
+var writeMethods = []string{http.MethodPost, http.MethodPut, http.MethodPost, http.MethodDelete, http.MethodPatch}
+
+func AuthHeaderMiddleware(c *gin.Context) {
+	user := c.GetHeader(headerAuthUser)
+	email := c.GetHeader(headerAuthEmail)
+	scopes := c.GetHeader(headerAuthScopes)
+
+	if len(user) == 0 || len(email) == 0 || len(scopes) == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "missing authorization header",
+			"message": "missing authorization headers",
 		})
 		c.Abort()
 		return
 	}
 
-	parts := strings.Split(authHeader, space)
-	if len(parts) != 2 || parts[0] != bearer {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "Bearer format is required",
-		})
-		c.Abort()
-		return
-	}
+	scopesArr := strings.Split(scopes, ",")
 
-	jwtSecret := viper.GetString("security.jwt.secret")
-	tokenStr := parts[1]
+	c.Set(UsernameKey, user)
+	c.Set(EmailKey, email)
+	c.Set(ScopesKey, scopesArr)
+	c.Next()
+}
 
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unknown sign: %v", token.Header["alg"])
-		}
-		return []byte(jwtSecret), nil
-	})
+func ScopesMiddleware(c *gin.Context) {
+	method := c.Request.Method
+	scopes := getStringSliceValue(c, ScopesKey)
 
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid token"})
-		c.Abort()
-		return
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-
-		if exp, ok := claims["exp"].(float64); ok {
-			if time.Unix(int64(exp), 0).Before(time.Now()) {
-				c.JSON(http.StatusUnauthorized, gin.H{"message": "token expired"})
-				c.Abort()
-				return
-			}
-		}
-
-		c.Set("username", claims["username"])
-		c.Set("email", claims["email"])
+	if slices.Contains(scopes, adminScope) {
 		c.Next()
 		return
 	}
 
-	c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid token"})
+	if slices.Contains(readMethods, method) && slices.Contains(scopes, readScope) {
+		c.Next()
+		return
+	}
+
+	if slices.Contains(writeMethods, method) && slices.Contains(scopes, writeScope) {
+		c.Next()
+		return
+	}
+
+	c.JSON(http.StatusForbidden, gin.H{
+		"message": "forbidden permissions",
+	})
 	c.Abort()
+}
+
+func IsAdmin(c *gin.Context) bool {
+	scopes := getStringSliceValue(c, ScopesKey)
+	return slices.Contains(scopes, adminScope)
+}
+
+func getStringSliceValue(c *gin.Context, key string) []string {
+	if val, exists := c.Get(key); exists {
+		return val.([]string)
+	}
+
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"message": "internal server error",
+	})
+	c.Abort()
+	return make([]string, 0)
 }
